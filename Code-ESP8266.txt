@@ -1,0 +1,60 @@
+#include <ESP8266WiFi.h>
+#include <DHT.h>
+#define DHTPIN D2 // Pin connected to the DHT sensor
+#define DHTTYPE DHT11 // DHT 11
+const char* ssid = ""; // Your WiFi SSID
+const char* password = ""; // Your WiFi password
+const char* server = "api.thingspeak.com"; // ThingSpeak API server
+DHT dht(DHTPIN, DHTTYPE);
+void setup() {
+Serial.begin(115200);
+delay(10);
+dht.begin();
+// Connect to WiFi
+Serial.println();
+Serial.println();
+Serial.print("Connecting to ");
+Serial.println(ssid);
+WiFi.begin(ssid, password);
+while (WiFi.status() != WL_CONNECTED) {
+delay(500);
+Serial.print(".");
+}
+Serial.println("");
+Serial.println("WiFi connected");
+Serial.println("IP address: ");
+Serial.println(WiFi.localIP());
+}
+void loop() {
+float temperature = dht.readTemperature(); // Read temperature in Celsius
+float humidity = dht.readHumidity(); // Read humidity
+if (isnan(temperature) || isnan(humidity)) {
+Serial.println("Failed to read from DHT sensor!");
+return;
+Page | 49
+}
+Serial.print("Temperature: ");
+Serial.print(temperature);
+Serial.println("42 °C");
+Serial.print("Humidity: ");
+Serial.print(humidity);
+Serial.println("60 %");
+// Send data to ThingSpeak
+WiFiClient client;
+const int httpPort = 80;
+if (!client.connect(server, httpPort)) {
+Serial.println("Connection failed");
+return;
+}
+String url = ""; // Replace with your ThingSpeak API key
+url += "&field1=";
+url += String(temperature);
+url += "&field2=";
+url += String(humidity);
+Serial.print("Requesting URL: ");
+Serial.println(url);
+client.print(String("GET ") + url + " HTTP/1.1\r\n" +
+"Host: " + server + "\r\n" +
+"Connection: close\r\n\r\n");
+delay(5000); // Delay between updates
+}
